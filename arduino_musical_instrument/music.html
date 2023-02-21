@@ -1,15 +1,294 @@
 <!DOCTYPE html>
 <html>
-<title>Arduino Musical Instrument</title>
+<title>Arduino Musical Instrument Workshop</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="../w3.css">
+<script src="js/Tone.js"></script>
+<script>
+    const n001 = 42;
+    const notes_001 = [ "C2","D2","E2","F2","G2","A2","B2",
+                        "C3","D3","E3","F3","G3","A3","B3",
+                        "C4","D4","E4","F4","G4","A4","B4",
+                        "C5","D5","E5","F5","G5","A5","B5",
+                        "C6","D6","E6","F6","G6","A6","B6",
+                        "C7","D7","E7","F7","G7","A7","B7"];
+    const n002 = 30;
+    const notes_002 = [ "C#2","D#2","F#2","G#2","A#2",
+                        "C#3","D#3","F#3","G#3","A#3",
+                        "C#4","D#4","F#4","G#4","A#4",
+                        "C#5","D#5","F#5","G#5","A#5",
+                        "C#6","D#6","F#6","G#6","A#6",
+                        "C#7","D#7","F#7","G#7","A#7"];
+    const n003 = 18;
+    const notes_003 = [ "C2","E2","G2",
+                        "C3","E3","G3",
+                        "C4","E4","G4",
+                        "C5","E5","G5",
+                        "C6","E6","G6",
+                        "C7","E7","G7"];
+    const n004 = 18;
+    const notes_004 = [ "C2","Eb2","G2",
+                        "C3","Eb3","G3",
+                        "C4","Eb4","G4",
+                        "C5","Eb5","G5",
+                        "C6","Eb6","G6",
+                        "C7","Eb7","G7"];
+    const n005 = 8;
+    const notes_005 = ["C3","D3","E3","F3","G3","A3","B3","C4"];
+                        
+    const synth = new Tone.PolySynth(Tone.MonoSynth, {
+		volume: -8,
+		oscillator: {
+			type: "square8"
+		},
+		envelope: {
+			attack: 0.05,
+			decay: 0.3,
+			sustain: 0.4,
+			release: 0.8,
+		},
+		filterEnvelope: {
+			attack: 0.001,
+			decay: 0.7,
+			sustain: 0.1,
+			release: 0.8,
+			baseFrequency: 300,
+			octaves: 4
+		}
+	}).toDestination();
+	
+	var port;
+	var lineBuffer = '';
+	
+	var control_flip = 0;
+	var control_flip_last = 0;
+	var scale_type = 0;
+	var scale_type_last = 0;
+	
+	class LineBreakTransformer {
+        constructor() {
+            // A container for holding stream data until a new line.
+            this.chunks = "";
+        }
+
+        transform(chunk, controller) {
+            // Append new chunks to existing chunks.
+            this.chunks += chunk;
+            // For each line breaks in chunks, send the parsed lines out.
+            const lines = this.chunks.split("\r\n");
+            this.chunks = lines.pop();
+            lines.forEach((line) => controller.enqueue(line));
+        }
+
+        flush(controller) {
+            // When the stream is closed, flush any remaining chunks out.
+            controller.enqueue(this.chunks);
+        }
+    }
+	
+	async function getReader() {
+		var port = await navigator.serial.requestPort({});
+		await port.open({ baudRate: 115200 });
+		const textDecoder = new TextDecoderStream();
+        const readableStreamClosed = port.readable.pipeTo(textDecoder.writable);
+        const reader = textDecoder.readable
+            .pipeThrough(new TransformStream(new LineBreakTransformer()))
+            .getReader();
+        
+        // toggle panel to show connected
+        document.getElementById("play_panel").classList.remove('w3-light-grey')
+	    document.getElementById("play_panel").classList.add('w3-pale-green')
+	    document.getElementById("status_text").innerHTML = "<b>Status</b>: Connected!"
+	 	document.getElementById("status_text").style = "color:green;"
+        
+        // Listen to data coming from the serial device.
+        let lastind = 0;
+        while (true) {
+            const { value, done } = await reader.read();
+            if (done) {
+                console.log("here");
+                // Allow the serial port to be closed later.
+                reader.releaseLock();
+                break;
+            }
+            //console.log(value);
+            
+            // Convert to data
+            const data = value.split(" ");
+            let nind = Math.floor(n004*(Number(data[0])/1024))
+            if (nind < 0) {
+                nind = -1;
+            }
+            let dial = Number(data[1])
+            //console.log(freq);
+            console.log(value);
+            
+            // Testing can set different oscillators
+            if (dial < 512) {
+                synth.set({
+                    oscillator: {
+			            type: "sine"
+		            }
+                });
+            }
+            else {
+                synth.set({
+                    oscillator: {
+			            type: "square8"
+		            }
+                });
+            }
+            
+            // check for controls updates
+            let note_last = notes_001[lastind];
+            if (scale_type_last == 0) {
+                note_last = notes_001[lastind]
+            }
+            else if (scale_type_last == 1) {
+                note_last = notes_002[lastind]
+            }
+            else if (scale_type_last == 2) {
+                note_last = notes_003[lastind]
+            }
+            else if (scale_type_last == 3) {
+                note_last = notes_004[lastind]
+            }
+            
+            // switch off sounds on change of controls
+            if (scale_type != scale_type_last) {
+                synth.triggerRelease(note_last);
+            }
+            
+            // check for current note
+            let note_now = notes_001[nind];
+            if (scale_type == 0) {
+                note_now = notes_001[nind]
+            }
+            else if (scale_type == 1) {
+                note_now = notes_002[nind]
+            }
+            else if (scale_type == 2) {
+                note_now = notes_003[nind]
+            }
+            else if (scale_type == 3) {
+                note_now = notes_004[nind]
+            }
+            
+            if (nind == -1) {
+                synth.triggerRelease(note_last);
+            }
+            else {
+                synth.triggerRelease(note_last);
+                synth.triggerAttack(note_now);
+            }
+            lastind = nind;
+            
+            scale_type_last = scale_type;
+            
+        }
+        
+        
+		
+	}
+	function listSerial() {
+	    Tone.start()
+	    if (port) {
+		    port.close();
+		    port = undefined;
+		}
+		else {
+		  console.log("Look for Serial Port")
+		  getReader().catch(function(error) {
+		    document.getElementById("status_text").innerHTML = "<b>Status</b>: Not connected yet."
+		    document.getElementById("status_text").style = "color:gray;"
+		    document.getElementById("play_panel").classList.remove('w3-pale-green')
+		    document.getElementById("play_panel").classList.add('w3-light-grey')
+		  });
+		}
+	}
+	function flipcontrols(value) {
+	    if (value == 0)  {
+	        control_flip = 0;
+		    console.log("off");
+	    }
+	    else {
+	        control_flip = 1;
+	 	    console.log("on");
+	    }	    
+	}
+	function updatescale(value) {
+	    if (value == "white") {
+	        scale_type = 0;
+	    }
+	    else if (value == "black") {
+	        scale_type = 1;
+	    }
+	    else if (value == "major") {
+	        scale_type = 2;
+	    }
+	    else if (value == "minor") {
+	        scale_type = 3;
+	    }
+	    console.log(scale_type);
+	}
+</script>
 <body>
 
-<div class="w3-container w3-blue-grey">
+<div class="w3-container w3-blue-grey w3-center">
   <h1>Arduino Musical Instrument</h1>
 </div>
 
-Hi there!
+<div class="w3-container w3-white w3-center">
+  <p><h3>Run your Arduino-based custom musical instrument here!</h3></p>
+</div>
+
+<div class="w3-container w3-pale-yellow">
+  <p><b>Step 1</b>: Connect your Arduino Uno to a spare USB port on your computer.</p>
+</div>
+
+<div class="w3-container w3-pale-blue">
+  <p><b>Step 2</b>: Click on the "connect" button below and select the option that 
+  corresponds to the Arduino device to connect to your instrument via USB.</p>
+</div>
+<div class="w3-container w3-pale-blue w3-center">
+  <button onclick="listSerial();">Connect</button>
+</div>
+
+<div class="w3-container w3-pale-yellow">
+  <p><b>Step 3</b>: Play your instrument and use the controls below to vary your sound.</p>
+</div>
+
+<div id="play_panel" class="w3-container w3-light-grey w3-center">
+  <p id="status_text"><b>Status</b>: Not connected yet.</p>
+  <p>
+  <input type="checkbox" name="flip_control_check" value="yes" onchange="flipcontrols(this.checked)"> 
+  Swap Pitch/tone controls.
+  </p>
+  <p>
+  <select name="scale" id="scale" onchange="updatescale(this.value)">
+    <option value="white">White Piano Keys</option>
+    <option value="black">Black Piano Keys</option>
+    <option value="major">Major scale Arpeggio</option>
+    <option value="minor">Minor scale Arpeggio</option>
+  </select>
+  </p>
+</div>
+
+<div class="w3-container w3-pale-yellow">
+  <p><b>Help and tips:</b></p>
+  <ul>
+    <li>Can't connect via the USB? You will need to close any other browser tabs that you have used to previously connect
+  to your instrument. Depending on your computer, you might also need to close the Arduino 
+  IDE software that you use to program your device and try again.</li>
+    <li>Once you have connected, you should be able to hear sounds playing on
+  your computer speakers or headphones. Your Arduino code sends information to your browser
+  on the current settings of the potentiometer and distance sensor and uses these to control
+  the pitch and sound type played.</li>
+    <li>By default, the pitch of notes played is determined by the distance sensor and the type
+  of sound controlled by the potentiometer. You can use the buttons and options below to swap
+  control between these inputs and change the scale used when changing note pitch.</li>
+  </ul>
+</div>
 
 </body>
 </html>
