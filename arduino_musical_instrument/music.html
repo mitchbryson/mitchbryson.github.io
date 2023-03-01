@@ -218,7 +218,7 @@
                 synth.triggerRelease(note_last);
                 synth2.triggerRelease(note_last);
             }
-            else {
+            else if (lastind != nind) {
                 synth.triggerRelease(note_last);
                 synth.triggerAttack(note_now);
                 synth2.triggerRelease(note_last);
