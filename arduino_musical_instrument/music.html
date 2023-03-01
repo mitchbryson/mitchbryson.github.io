@@ -35,11 +35,18 @@
                         "C7","Eb7","G7"];
     const n005 = 8;
     const notes_005 = ["C3","D3","E3","F3","G3","A3","B3","C4"];
-                        
+    
+    const pingPong = new Tone.PingPongDelay("4n", 0.2).toDestination();
+    //const autoFilter = new Tone.AutoFilter("4n").toDestination().start();
+    const autoFilter = new Tone.AutoFilter(3.0,5000,4).toDestination().start();
+    autoFilter.set({
+        type: "sine"
+    });
+    
     const synth = new Tone.PolySynth(Tone.MonoSynth, {
-		volume: -8,
+		volume: -6,
 		oscillator: {
-			type: "square8"
+			type: "triangle"
 		},
 		envelope: {
 			attack: 0.05,
@@ -55,7 +62,32 @@
 			baseFrequency: 300,
 			octaves: 4
 		}
+	//}).connect(pingPong);
 	}).toDestination();
+	//}).connect(autoFilter);
+	
+	const synth2 = new Tone.PolySynth(Tone.MonoSynth, {
+		volume: -8,
+		oscillator: {
+			type: "sawtooth"
+		},
+		envelope: {
+			attack: 0.05,
+			decay: 0.3,
+			sustain: 0.4,
+			release: 0.8,
+		},
+		filterEnvelope: {
+			attack: 0.001,
+			decay: 0.7,
+			sustain: 0.1,
+			release: 0.8,
+			baseFrequency: 300,
+			octaves: 4
+		}
+	//}).connect(pingPong);
+	}).toDestination();
+	//}).connect(autoFilter);
 	
 	var port;
 	var lineBuffer = '';
@@ -113,29 +145,36 @@
             }
             //console.log(value);
             
-            // Convert to data
+            // read settings from serial data
             const data = value.split(" ");
-            let nind = Math.floor(n004*(Number(data[0])/1024))
+            let distsens = Number(data[0])
+            let dial = Number(data[1])
+            
+            // check switched data
+            if ( (control_flip == 1) && (distsens >= 0) ) {
+                let temp = dial
+                dial = distsens
+                distsens = temp
+            }
+            
+            // Get note index 
+            let nind = Math.floor(n004*(distsens/1024))
             if (nind < 0) {
                 nind = -1;
             }
-            let dial = Number(data[1])
-            //console.log(freq);
-            console.log(value);
             
             // Testing can set different oscillators
-            if (dial < 512) {
-                synth.set({
-                    oscillator: {
-			            type: "sine"
-		            }
+            let vol_a = Math.floor(34*(dial/1024.0) - 40);
+            let vol_b = Math.floor(34*((1024-dial)/1024.0) - 55);
+            let fre_at = Math.floor(4000*(dial/1024.0) + 1000);
+            if (!isNaN(vol_b)) {
+                synth2.set({
+			        volume: vol_b
                 });
             }
-            else {
-                synth.set({
-                    oscillator: {
-			            type: "square8"
-		            }
+            if (!isNaN(fre_at)) {
+                autoFilter.set({
+			        baseFrequency: fre_at
                 });
             }
             
@@ -157,6 +196,7 @@
             // switch off sounds on change of controls
             if (scale_type != scale_type_last) {
                 synth.triggerRelease(note_last);
+                synth2.triggerRelease(note_last);
             }
             
             // check for current note
@@ -176,10 +216,13 @@
             
             if (nind == -1) {
                 synth.triggerRelease(note_last);
+                synth2.triggerRelease(note_last);
             }
             else {
                 synth.triggerRelease(note_last);
                 synth.triggerAttack(note_now);
+                synth2.triggerRelease(note_last);
+                synth2.triggerAttack(note_now);
             }
             lastind = nind;
             
@@ -198,6 +241,7 @@
 		}
 		else {
 		  console.log("Look for Serial Port")
+		  //getReader();
 		  getReader().catch(function(error) {
 		    document.getElementById("status_text").innerHTML = "<b>Status</b>: Not connected yet."
 		    document.getElementById("status_text").style = "color:gray;"
@@ -214,6 +258,16 @@
 	    else {
 	        control_flip = 1;
 	 	    console.log("on");
+	    }	    
+	}
+	function flippingpong(value) {
+	    if (value == 0)  {
+	        synth.toDestination()
+	        synth2.toDestination()
+	    }
+	    else {
+	        synth.connect(pingPong)
+	        synth2.connect(pingPong)
 	    }	    
 	}
 	function updatescale(value) {
@@ -262,7 +316,11 @@
   <p id="status_text"><b>Status</b>: Not connected yet.</p>
   <p>
   <input type="checkbox" name="flip_control_check" value="yes" onchange="flipcontrols(this.checked)"> 
-  Swap Pitch/tone controls.
+  Swap Pitch/tone controls
+  </p>
+  <p>
+  <input type="checkbox" name="pingpong_check" value="yes" onchange="flippingpong(this.checked)"> 
+  Use Ping-Pong filter
   </p>
   <p>
   <select name="scale" id="scale" onchange="updatescale(this.value)">
