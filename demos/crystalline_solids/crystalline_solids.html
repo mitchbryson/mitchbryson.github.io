@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<!--border:1px solid #000000;
+    background-color: #ffffff;--!>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<style>
+canvas {
+    margin: 0;
+    padding: 10px;
+    background-color: #ffffff;
+}
+controls {
+	padding: 5px;
+}
+</style>
+</head>
+<canvas id="myCanvas" width="500" height="500" onmousemove="OnMouseMove(event)" onmousedown="OnMouseDown()" onmouseup="OnMouseUp()"></canvas>
+<script src="js/three.min.js"></script>
+<script src="js/hemisphere.js"></script>
+<script src="js/sphere8th.js"></script>
+<script src="js/crystalline_solids.js"></script>
+<br>
+<controls>
+Crystal Structure:
+<select onchange="ChangeModel(value)">
+  <option value="0" selected>Simple Cubic (SC)</option>
+  <option value="1">Body-Centered Cubic (BCC)</option>
+  <option value="2">Face-Centered Cubic (FCC)</option>
+</select>
+show unit cell
+<input type="checkbox" id="unitcell" onclick="UpdateUnitcell(checked)">
+</controls>
+</body>
+</html>

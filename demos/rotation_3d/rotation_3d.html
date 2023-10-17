@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<!--border:1px solid #000000;
+    background-color: #ffffff;--!>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<style>
+canvas {
+	float: left;
+    margin: 0;
+    padding: 10px;
+    background-color: #ffffff;
+}
+controls {
+	padding: 5px;
+}
+</style>
+</head>
+<canvas id="myCanvas" width="400" height="400" onmousemove="OnMouseMove(event)" onmousedown="OnMouseDown()" onmouseup="OnMouseUp()"></canvas>
+<script src="js/three.min.js"></script>
+<script src="js/Jet_01.js"></script>	
+<script src="js/rotation_3d.js"></script>
+<br>
+<controls>
+<button id="reset_camera_button" onclick="ResetCamera()">Reset Camera</button>
+<button id="reset_button" onclick="ResetSim()">Reset Orientation</button>
+<br>
+<br>
+Euler Angles:
+<div class="slidecontainer">
+  Roll (deg)
+  <input type="range" min="-180" max="180" value="0" class="slider" id="slider_r" oninput="setparamvalue(this.value,0)">
+  <input type="text" value=0 size=6 max=180.0 min=-180.0 id="input_r" oninput="setparamvalue(this.value,0)">
+</div>
+<div class="slidecontainer">
+  Pitch (deg)
+  <input type="range" min="-90" max="90" value="0" class="slider" id="slider_p" oninput="setparamvalue(this.value,1)">
+  <input type="text" value=0 size=6 max=90.0 min=-90.0 id="input_p" oninput="setparamvalue(this.value,1)">
+</div>
+<div class="slidecontainer">
+  Yaw (deg)
+  <input type="range" min="-180" max="180" value="0" class="slider" id="slider_y" oninput="setparamvalue(this.value,2)">
+  <input type="text" value=0 size=6 max=180.0 min=-180.0 id="input_y" oninput="setparamvalue(this.value,2)">
+</div>
+<br>
+<input type="checkbox" name="axesonoff_w" value="yes" onchange="switchaxisonoff_w(this.checked)" checked> Show X-Y-Z Axes<br>
+<input type="checkbox" name="axesonoff_b" value="yes" onchange="switchaxisonoff_b(this.checked)" checked> Show body x-y-z Axes<br>
+</controls>
+<br>
+<div style="background-color:black; width:250px; float: left; padding: 10px;">
+<font color="#ffffff">World Frame: </font><font color="#ff0000">X axis</font> <font color="#00ff00">Y Axis</font> <font color="#0000ff">Z Axis</font>
+<font color="#ffffff">Body Frame: </font><font color="#ff00ff">X axis</font> <font color="#ffff00">Y Axis</font> <font color="#00ffff">Z Axis</font>
+</div>
+<br>
+<br>
+<br>
+<br>
+Click and drag the figure to change the view.
+<br>
+<br>
+Change the sliders/values to set the Euler
+<br>
+angles of the model.
+</body>
+</html>

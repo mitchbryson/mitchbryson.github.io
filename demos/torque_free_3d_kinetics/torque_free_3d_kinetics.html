@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<!--border:1px solid #000000;
+    background-color: #ffffff;--!>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<style>
+canvas {
+	float: left;
+    margin: 0;
+    padding: 10px;
+    background-color: #ffffff;
+}
+controls {
+	padding: 5px;
+}
+</style>
+</head>
+<canvas id="myCanvas" width="400" height="400" onmousemove="OnMouseMove(event)" onmousedown="OnMouseDown()" onmouseup="OnMouseUp()"></canvas>
+<script src="js/three.min.js"></script>
+<script src="js/rotating_box.js"></script>
+<br>
+<controls>
+Simulation Controls: 
+<button id="start_button" onclick="StartSim()">Start</button>
+<button id="reset_button" onclick="ResetSim()">Reset</button>
+<br>
+<br>
+Block Size:
+<div class="slidecontainer">
+  X (m)
+  <input type="range" min="1" max="10" value="5" class="slider" id="slidebx" oninput="setparamvalue(this.value,0)">
+  <input type="text" value=5 size=6 max=10 min=1 id="blockx" onchange="setparamvalue(this.value,0)">
+</div>
+<div class="slidecontainer">
+  Y (m)
+  <input type="range" min="1" max="10" value="5" class="slider" id="slideby" oninput="setparamvalue(this.value,1)">
+  <input type="text" value=5 size=6 max=10 min=1 id="blocky" onchange="setparamvalue(this.value,1)">
+</div>
+<div class="slidecontainer">
+  Z (m)
+  <input type="range" min="1" max="10" value="5" class="slider" id="slidebz" oninput="setparamvalue(this.value,2)">
+  <input type="text" value=5 size=6 max=10 min=1 id="blockz" onchange="setparamvalue(this.value,2)">
+</div>
+<br>
+<br>
+Initial Angular Velocity:
+<div class="slidecontainer">
+  X (deg/s)
+  <input type="range" min="-100" max="100" value="0" class="slider" id="slidevx" onchange="setparamvalue(this.value,3)">
+  <input type="text" value=0 size=6 max=100.0 min=-100.0 id="angvx" onchange="setparamvalue(this.value,3)">
+</div>
+<div class="slidecontainer">
+  Y (deg/s)
+  <input type="range" min="-100" max="100" value="0" class="slider" id="slidevy" onchange="setparamvalue(this.value,4)">
+  <input type="text" value=0 size=6 max=100.0 min=-100.0 id="angvy" onchange="setparamvalue(this.value,4)">
+</div>
+<div class="slidecontainer">
+  Z (deg/s)
+  <input type="range" min="-100" max="100" value="0" class="slider" id="slidevz" onchange="setparamvalue(this.value,5)">
+  <input type="text" value=0 size=6 max=100.0 min=-100.0 id="angvz" onchange="setparamvalue(this.value,5)">
+</div>
+<br>
+<div style="background-color:black; p-color=white; width:200px; float: left; padding: 10px;">
+<input type="checkbox" name="axesonoff" value="yes" onchange="switchaxisonoff(this.checked)" checked> <font color="#ffffff">Show <font color="#ff0000">X</font><font color="#ffffff">-</font><font color="#00ff00">Y</font><font color="#ffffff">-</font><font color="#0000ff">Z</font><br>
+<input type="checkbox" name="angmomshow" value="yes" onchange="switchonoff_angmom(this.checked)"> <font color="#ffffff">Show</font> <font color="#00ffff">Angular Momentum</font><br>
+<input type="checkbox" name="angvelshow" value="yes" onchange="switchonoff_angvel(this.checked)"> <font color="#ffffff">Show</font> <font color="#ffff00">Angular Velocity</font><br>
+</div>
+</controls>
+</body>
+</html>
